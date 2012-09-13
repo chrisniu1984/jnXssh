@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+    <dir name="公司（样例）">
+        <site name="网关服务器" host="192.168.1.1" port="22" user="root" pass="xxxx">
+            <cmd name="重启" cmd="reboot" />
+        </site>
+
+        <site name="DHCP服务器" host="192.168.1.2" port="22" user="root" pass="xxxx"> 
+            <cmd name="chdir_etc" cmd="cd /etc/" />
+        </site>
+            
+        <site name="Server_1" host="192.168.1.101" port="22" user="root" pass="xxxx" /> 
+        <site name="Server_2" host="192.168.1.102" port="22" user="root" pass="xxx" />
+    </dir>
+
+    <dir name="托管（样例）">
+        <site name="服务器183" host="125.208.119.183" port="22" user="root" pass="123" /> 
+        <site name="服务器184" host="125.208.119.184" port="22" user="root" pass="123" /> 
+        <site name="应用服务器" host="125.208.39.179" port="22" user="root" pass="123" /> 
+    </dir>
+</root>

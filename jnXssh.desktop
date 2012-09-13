@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=jnXssh
+Comment=jnXssh
+Exec=jnXssh
+Terminal=false
+X-MultipleArgs=false
+Type=Application
+Icon=gnome-network-properties.svg
+Categories=GNOME;GTK;Network;
