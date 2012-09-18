@@ -252,6 +252,9 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    g_thread_init(NULL);
+    gdk_threads_init();
+
     // 初始化
     gtk_init(&argc, &argv);
 

@@ -210,8 +210,10 @@ static void *work(void *p)
         break;
     }
 
+    gdk_threads_enter();
     int num = gtk_notebook_page_num(GTK_NOTEBOOK(m_notebook), pg->body);
     gtk_notebook_remove_page(GTK_NOTEBOOK(m_notebook), num);
+    gdk_threads_leave();
 
     return NULL;
 }
