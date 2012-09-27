@@ -237,6 +237,12 @@ static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
     gtk_widget_grab_focus(page);
 }
 
+static void on_btn_clicked(GtkToolButton *item, gpointer user_data)
+{
+    GtkWidget *btn = (GtkWidget*) user_data;
+    gtk_menu_popup(GTK_MENU(btn), NULL, NULL, NULL, NULL, 0, 0);
+}
+
 static void on_menu_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
 {
     int i = gtk_notebook_get_current_page(GTK_NOTEBOOK(m_notebook));
@@ -515,10 +521,23 @@ gint page_create_show(cfg_t *cfg)
     gtk_toolbar_set_style(GTK_TOOLBAR(toolbar), GTK_TOOLBAR_BOTH);
         GtkToolItem *item;
         int i = 0;
-        for (i=0; i<CMD_MAX_COUNT && cfg->cmd[i].name[0] != '\0'; i++) {
-            item = gtk_tool_button_new(NULL, cfg->cmd[i].name);
+        for (i=0; i<BTN_MAX_COUNT && cfg->btn[i].name[0] != '\0'; i++) {
+            //item = gtk_menu_tool_button_new(NULL, cfg->btn[i].name);
+            item = gtk_tool_button_new(NULL, cfg->btn[i].name);
             gtk_toolbar_insert(GTK_TOOLBAR(toolbar), item, -1);
-            g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_cmd_clicked), cfg->cmd[i].cmd);
+
+            GtkWidget *menu = gtk_menu_new();
+            g_signal_connect(G_OBJECT(item), "clicked", G_CALLBACK(on_btn_clicked), menu);
+            //gtk_menu_tool_button_set_menu(GTK_MENU_TOOL_BUTTON(item), menu);
+
+            int j = 0;
+            for (j=0; j<CMD_MAX_COUNT && cfg->btn[i].cmd[j].name[0] != '\0'; j++) {
+                GtkWidget *cmd = gtk_menu_item_new_with_label(cfg->btn[i].cmd[j].name);
+                gtk_menu_attach(GTK_MENU(menu), cmd, 0, 1, j, j+1);
+                g_signal_connect(G_OBJECT(cmd), "activate", G_CALLBACK(on_cmd_clicked), cfg->btn[i].cmd[j].str);
+            }
+            gtk_widget_show_all(menu);
+
 
             // |
             item = gtk_separator_tool_item_new();

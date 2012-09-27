@@ -18,6 +18,7 @@ extern char PATH[256];  // $HOME + CONFIG_DIR
 #define ICON_SITE   "res/site.svg"
 #define ICON_SHELL  "res/shell.png"
 
+#define BTN_MAX_COUNT   16
 #define CMD_MAX_COUNT   16
 
 #endif // __CONFIG_H__

@@ -2,11 +2,16 @@
 <root>
     <dir name="公司（样例）">
         <site name="网关服务器" host="192.168.1.1" port="22" user="root" pass="xxxx">
+          <btn name="常用">
             <cmd name="重启" cmd="reboot" />
+          </btn>
         </site>
 
         <site name="DHCP服务器" host="192.168.1.2" port="22" user="root" pass="xxxx"> 
+          <btn name="目录切换">
             <cmd name="chdir_etc" cmd="cd /etc/" />
+            <cmd name="chdir_." cmd="cd /" />
+          </btn>
         </site>
             
         <site name="Server_1" host="192.168.1.101" port="22" user="root" pass="xxxx" /> 

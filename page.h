@@ -16,8 +16,13 @@ extern "C" {
 
 typedef struct {
     char    name[256];
-    char    cmd[256];
+    char    str[256];
 } cmd_t;
+
+typedef struct {
+    char    name[256];
+    cmd_t   cmd[CMD_MAX_COUNT];
+} btn_t;
 
 typedef struct {
     char    name[256];
@@ -25,7 +30,8 @@ typedef struct {
     char    port[256];
     char    user[256];
     char    pass[256];
-    cmd_t   cmd[CMD_MAX_COUNT];
+
+    btn_t   btn[BTN_MAX_COUNT];
 } cfg_t;
 
 typedef struct {

@@ -258,21 +258,36 @@ static void _append_node(TiXmlElement *ele, GtkTreeIter *iter)
         }
 
         // cmd
-        TiXmlElement *child;
+        TiXmlElement *btn;
         int i;
-        for (child = ele->FirstChildElement(), i=0;
-             child != NULL && i<CMD_MAX_COUNT;
-             child = child->NextSiblingElement(), i++) {
+        int j;
+        for (btn = ele->FirstChildElement(), i=0;
+             btn != NULL && i<BTN_MAX_COUNT;
+             btn = btn->NextSiblingElement(), i++) {
 
-            if (strcmp(child->Value(), "cmd") != 0) {
+            if (strcmp(btn->Value(), "btn") != 0) {
                 continue;
             }
 
-            if (child->Attribute("name")) {
-                strcpy(cfg->cmd[i].name, child->Attribute("name"));
+            if (btn->Attribute("name")) {
+                strcpy(cfg->btn[i].name, btn->Attribute("name"));
             }
-            if (child->Attribute("cmd")) {
-                strcpy(cfg->cmd[i].cmd, child->Attribute("cmd"));
+
+            TiXmlElement *cmd;
+            for (cmd = btn->FirstChildElement(), j=0;
+                 cmd != NULL && j<CMD_MAX_COUNT;
+                 cmd = cmd->NextSiblingElement(), j++) {
+
+                if (strcmp(cmd->Value(), "cmd") != 0) {
+                    continue;
+                }
+
+                if (cmd->Attribute("name")) {
+                    strcpy(cfg->btn[i].cmd[j].name, cmd->Attribute("name"));
+                }
+                if (cmd->Attribute("cmd")) {
+                    strcpy(cfg->btn[i].cmd[j].str, cmd->Attribute("cmd"));
+                }
             }
         }
 
