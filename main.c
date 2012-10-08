@@ -1,4 +1,5 @@
 #define _XOPEN_SOURCE
+#define _GNU_SOURCE
 #include <signal.h>
 #include <fcntl.h>
 
@@ -6,6 +7,11 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
 #include "config.h"
 #include "util.h"
@@ -14,79 +20,6 @@
 #include "site.h"
 
 GtkWidget *m_window;
-GtkWidget *m_allssh;
-GtkWidget *m_command;
-
-static void on_combo_changed(GtkWidget *widget, gpointer user_data)
-{
-    gtk_widget_hide(m_allssh);
-    gtk_widget_hide(m_command);
-
-    switch(gtk_combo_box_get_active(GTK_COMBO_BOX(widget))) {
-    case 0:
-        gtk_widget_show(m_allssh);
-        break;
-    case 1:
-        gtk_widget_show(m_command);
-        break;
-    }
-}
-
-static gboolean on_allssh_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-    GdkEventKey *key = (GdkEventKey*) event;
-    char *cmd = (char*) gtk_entry_get_text(GTK_ENTRY(m_allssh));
-    int len = strlen(cmd);
-
-    if (key->state & GDK_CONTROL_MASK) {
-        // 按下Ctrl+(a-z)时，发送控制字符
-        if (key->keyval >= GDK_KEY_a && key->keyval <= GDK_KEY_z) {
-            page_foreach_send_char(key->keyval-'a'+1);
-            return TRUE;
-        }
-
-        // 按下Ctrl+(A-Z)时，发送控制字符
-        if (key->keyval >= GDK_KEY_A && key->keyval <= GDK_KEY_Z) {
-            page_foreach_send_char(key->keyval-'A'+1);
-            return TRUE;
-        }
-
-        // 按下Ctrl+Enter时，发送无'\n'结尾的字符串
-        if (key->keyval == GDK_KEY_Return){
-            page_foreach_send_string(cmd);
-            gtk_entry_set_text(GTK_ENTRY(m_allssh), "");
-            return TRUE;
-        }
-    }
-    // 按下Enter时发送带'\n'结尾的字符串
-    else if (key->keyval == GDK_KEY_Return) {
-        cmd[len] = '\n';
-        cmd[len+1] = '\0';
-        page_foreach_send_string(cmd);
-        gtk_entry_set_text(GTK_ENTRY(m_allssh), "");
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-static gboolean on_command_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-    GdkEventKey *key = (GdkEventKey*) event;
-
-    if (key->keyval == GDK_KEY_Return) {
-        //char *cmd = (char*) gtk_entry_get_text(GTK_ENTRY(m_allssh));
-        //int len = strlen(cmd);
-
-        // FIXME: 完成命令解析
-
-        gtk_entry_set_text(GTK_ENTRY(m_command), "");
-
-        return TRUE;
-    }
-
-    return FALSE;
-}
 
 static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
@@ -119,13 +52,7 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
                 num = 0;
             }
 
-            // 当焦点在m_allssh上时，为防止标签切换时自动把焦点移到当前page上，
-            // 先关闭自动获取焦点。
-            if (gtk_widget_is_focus(m_allssh)) {
-                page_set_auto_focus(0);
-            }
             page_set_select_num(num);
-            page_set_auto_focus(1);
             return TRUE;
         }
         // 按下Ctrl+Left时，向左移动
@@ -134,19 +61,45 @@ static gboolean on_window_key_press(GtkWidget *widget, GdkEvent *event, gpointer
             int num = page_get_select_num();
             num--;
 
-            // 当焦点在m_allssh上时，为防止标签切换时自动把焦点移到当前page上，
-            // 先关闭自动获取焦点。
-            if (gtk_widget_is_focus(m_allssh)) {
-                page_set_auto_focus(0);
-            }
             page_set_select_num(num);
-            page_set_auto_focus(1);
             return TRUE;
         }
     }
 
     return FALSE;
 }
+
+static void *proc_allvte(void *p)
+{
+    int master = vte_pty_get_fd((VtePty*)p);
+    int slave = open(ptsname(master), O_RDWR);
+
+    // raw 模式
+    struct termios tio;
+    cfmakeraw(&tio);
+    tcsetattr(slave, TCSADRAIN, &tio);
+
+    fd_set set;
+    while (1) {
+        FD_ZERO(&set);
+        FD_SET(slave, &set);
+        struct timeval tv = {0, 100};
+
+        if (select(slave+1, &set, NULL, NULL, &tv) > 0) {
+            char buf[256];
+            int len = read(slave, buf, sizeof(buf));
+            if (len > 0) {
+                buf[len] = '\0';
+                page_foreach_send_string(buf);
+            }
+        }
+
+        usleep(1000);
+    }
+
+    return NULL;
+}
+
 
 static int window_create_show()
 {
@@ -161,7 +114,6 @@ static int window_create_show()
     gtk_window_maximize(GTK_WINDOW(m_window));
     gtk_widget_set_events(m_window, GDK_BUTTON_PRESS_MASK|GDK_KEY_PRESS_MASK);
     g_signal_connect(G_OBJECT(m_window), "key-press-event", G_CALLBACK(on_window_key_press), NULL);
-    //g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (on_window_destory), NULL);
     g_signal_connect(G_OBJECT(m_window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
     
         // vbox
@@ -172,53 +124,16 @@ static int window_create_show()
             GtkWidget *notebook = page_get_notebook();
             gtk_box_pack_start(GTK_BOX(vbox), notebook, TRUE, TRUE, 0);
 
-            // hbox
-            GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-            gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 5);
+            // pty + vte
+            GtkWidget *vte = vte_terminal_new();
+            gtk_box_pack_start(GTK_BOX(vbox), vte, FALSE, FALSE, 1);
+            vte_terminal_set_size((VteTerminal*)vte, 1, 1);
+            VtePty *pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
+            vte_terminal_set_pty_object((VteTerminal*)vte, pty);
+            pthread_t tid;
+            pthread_create(&tid, NULL, proc_allvte, pty);
 
-                // liststore
-                GtkTreeIter iter;
-                GtkListStore *list = gtk_list_store_new(1, G_TYPE_STRING);
-                gtk_list_store_append(list, &iter);
-                gtk_list_store_set(list, &iter, 0, "All SSHs", -1);
-                gtk_list_store_append(list, &iter);
-                gtk_list_store_set(list, &iter, 0, "Command", -1);
-                
-                // combo
-                GtkWidget *combo = gtk_combo_box_new_with_model(GTK_TREE_MODEL(list));
-                GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-                gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(combo), renderer, FALSE);
-                gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(combo), renderer, "text", 0, NULL);    
-                g_signal_connect(G_OBJECT(combo), "changed" , G_CALLBACK(on_combo_changed), NULL);
-                gtk_box_pack_start(GTK_BOX(hbox), combo, FALSE, FALSE, 10);
-
-                // style
-                GdkRGBA rgba;
-                PangoFontDescription *desc = pango_font_description_new();
-                pango_font_description_set_family(desc, "WenQuanYi Micro Hei Mono, Microsoft YaHei");
-                pango_font_description_set_size(desc, 14*PANGO_SCALE);
-
-                // all_ssh
-                m_allssh = gtk_entry_new();
-                gdk_rgba_parse(&rgba, "rgb(255,0,0)");
-                gtk_widget_override_color(m_allssh, GTK_STATE_FLAG_FOCUSED, &rgba);
-                gtk_widget_override_font(m_allssh, desc);
-                g_signal_connect(G_OBJECT(m_allssh), "key-press-event", G_CALLBACK(on_allssh_key_press), NULL);
-                gtk_box_pack_start(GTK_BOX(hbox), m_allssh, TRUE, TRUE, 5);
-
-                // command
-                m_command = gtk_entry_new();
-                gdk_rgba_parse(&rgba, "rgb(0,0,255)");
-                gtk_widget_override_color(m_command, GTK_STATE_FLAG_FOCUSED, &rgba);
-                gtk_widget_override_font(m_command, desc);
-                g_signal_connect(G_OBJECT(m_command), "key-press-event", G_CALLBACK(on_command_key_press), NULL);
-                gtk_box_pack_start(GTK_BOX(hbox), m_command, TRUE, TRUE, 5);
-
-
-    //gtk_widget_grab_focus(notebook);
     gtk_widget_show_all(m_window);
-
-    gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
 
     return 0;
 }
@@ -265,7 +180,9 @@ int main(int argc, char **argv)
     site_load();
 
     // 创建tab容（使用site页作为hub_page)
-    page_init(site_get_object());
+    GtkWidget *hub = site_get_object();
+    page_init(hub);
+    gtk_widget_grab_focus(hub);
 
     // 创建主窗口
     window_create_show();

@@ -22,6 +22,7 @@
 #define SSH     "/usr/bin/ssh"
 #define SHELL   "/bin/bash"
 
+
 static GtkWidget *m_notebook;
 
 static GtkWidget *m_menu;
@@ -73,7 +74,6 @@ static void run_ssh(pg_t *pg)
      */
     int vte_master_fd = vte_pty_get_fd(pg->ssh.pty);
     int vte_slave_fd = open(ptsname(vte_master_fd), O_RDWR);
-
 
     // raw 模式
     struct termios tio;
@@ -563,6 +563,8 @@ gint page_create_show(cfg_t *cfg)
 
     pthread_t tid;
     pthread_create(&tid, NULL, work, pg);
+
+    gtk_widget_grab_focus(vte);
 
     return num;
 }
