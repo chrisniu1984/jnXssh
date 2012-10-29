@@ -1,5 +1,5 @@
 TARGET = jnXssh
-OBJS = main.o page.o site.opp
+OBJS = main.o page.o site.opp debug.o
 
 HEADER = config.h
 CFLAGS = -g -Wall -pipe $(shell pkg-config --cflags gtk+-3.0 vte-2.90 gthread-2.0 tinyxml)
@@ -16,7 +16,7 @@ $(TARGET): $(OBJS)
 	gcc -c $(CXXFLAGS) -o $@ $<
 
 install: ${TARGET}
-	sudo cp jnXssh.desktop /usr/share/applications/
+	sudo desktop-file-install jnXssh.desktop
 	sudo cp ${TARGET} /usr/local/bin/
 	mkdir -p ${HOME}/.jnXssh/
 	cp -r res ${HOME}/.jnXssh/

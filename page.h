@@ -57,6 +57,7 @@ typedef struct {
         } hub;
 
         struct {
+            GtkWidget *vte;
             VtePty  *pty;
             pid_t   child;
             int     need_stop;
@@ -64,6 +65,7 @@ typedef struct {
         } ssh;
 
         struct {
+            GtkWidget *vte;
             VtePty  *pty;
             pid_t   child;
         } shell;

@@ -224,8 +224,16 @@ static void on_menu_copy_clicked(GtkMenuItem *menuitem, gpointer user_data)
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
 
-    vte_terminal_copy_clipboard((VteTerminal*)pg->body);
-    vte_terminal_select_none((VteTerminal*)pg->body);
+    VteTerminal *vte = (VteTerminal*) NULL;
+    if (pg->type == PG_TYPE_SHELL) {
+        vte = (VteTerminal*) pg->shell.vte;
+    }
+    else if (pg->type == PG_TYPE_SSH) {
+        vte = (VteTerminal*) pg->ssh.vte;
+    }
+
+    vte_terminal_copy_clipboard(vte);
+    vte_terminal_select_none(vte);
 }
 
 static void on_cmd_clicked(GtkMenuItem *menuitem, gpointer user_data)
@@ -249,7 +257,15 @@ static void on_menu_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
 
-    vte_terminal_paste_clipboard((VteTerminal*)pg->body);
+    VteTerminal *vte = (VteTerminal*) NULL;
+    if (pg->type == PG_TYPE_SHELL) {
+        vte = (VteTerminal*) pg->shell.vte;
+    }
+    else if (pg->type == PG_TYPE_SSH) {
+        vte = (VteTerminal*) pg->ssh.vte;
+    }
+
+    vte_terminal_paste_clipboard(vte);
 }
 
 static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data)
@@ -258,9 +274,17 @@ static void on_menu_copy_paste_clicked(GtkMenuItem *menuitem, gpointer user_data
     GtkWidget *p = gtk_notebook_get_nth_page(GTK_NOTEBOOK(m_notebook), i);
     pg_t *pg = (pg_t*) g_object_get_data(G_OBJECT(p), "pg");
 
-    vte_terminal_copy_clipboard((VteTerminal*)pg->body);
-    vte_terminal_select_none((VteTerminal*)pg->body);
-    vte_terminal_paste_clipboard((VteTerminal*)pg->body);
+    VteTerminal *vte = (VteTerminal*) NULL;
+    if (pg->type == PG_TYPE_SHELL) {
+        vte = (VteTerminal*) pg->shell.vte;
+    }
+    else if (pg->type == PG_TYPE_SSH) {
+        vte = (VteTerminal*) pg->ssh.vte;
+    }
+
+    vte_terminal_copy_clipboard(vte);
+    vte_terminal_select_none(vte);
+    vte_terminal_paste_clipboard(vte);
 }
 
 // 标签选中改变时
@@ -446,13 +470,20 @@ gint page_shell_create()
 
     // pty + vte
     pg->body = vte_terminal_new();
-    pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
-    vte_terminal_set_pty_object((VteTerminal*)pg->body, pg->ssh.pty);
-    vte_terminal_set_font_from_string((VteTerminal*)pg->body, "WenQuanYi Micro Hei Mono 11");
-    vte_terminal_set_scrollback_lines((VteTerminal*)pg->body, 1024);
-    vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->body, 1);
-    g_object_set_data(G_OBJECT(pg->body), "pg", pg);
-    g_signal_connect(G_OBJECT(pg->body), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
+    pg->shell.vte = pg->body;
+
+
+    pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
+    vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);
+
+    GdkColor color;
+    gdk_color_parse("red", &color);
+    vte_terminal_set_color_background((VteTerminal*)pg->shell.vte, &color);
+    vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");
+    vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
+    vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
+    g_object_set_data(G_OBJECT(pg->shell.vte), "pg", pg);
+    g_signal_connect(G_OBJECT(pg->shell.vte), "button-press-event", G_CALLBACK(on_vte_button_press), NULL);
 
     // page
     gint num = gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), pg->body, pg->head.box);
@@ -546,6 +577,8 @@ gint page_create_show(cfg_t *cfg)
 
     // pty + vte
     GtkWidget *vte = vte_terminal_new();
+    pg->ssh.vte = vte;
+    vte_terminal_set_emulation((VteTerminal*) vte, "xterm");
     gtk_box_pack_start(GTK_BOX(vbox), vte, TRUE, TRUE, 0);
     pg->ssh.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
     vte_terminal_set_pty_object((VteTerminal*)vte, pg->ssh.pty);

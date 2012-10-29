@@ -16,6 +16,7 @@
 #include "config.h"
 #include "util.h"
 
+#include "debug.h"
 #include "page.h"
 #include "site.h"
 
@@ -186,6 +187,9 @@ int main(int argc, char **argv)
 
     // 创建主窗口
     window_create_show();
+
+    // 创建DEBUG_WINDOW
+    //debug_create_show(m_window);
 
     gtk_main();
 

@@ -7,3 +7,4 @@ X-MultipleArgs=false
 Type=Application
 Icon=gnome-network-properties
 Categories=GNOME;GTK;Network;
+X-Desktop-File-Install-Version=0.20
