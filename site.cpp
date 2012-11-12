@@ -95,7 +95,7 @@ static void on_reload_clicked(GtkWidget *widget, gpointer user_data)
 static void on_edit_clicked(GtkWidget *widget, gpointer user_data)
 {
     char cmd[256] = {0x00};
-    sprintf(cmd, "gvim -f %s", m_sitefile);
+    sprintf(cmd, "gvim %s", m_sitefile);
     system(cmd);
 }
 
