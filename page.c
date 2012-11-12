@@ -77,6 +77,7 @@ static void run_ssh(pg_t *pg)
 
     // raw 模式
     struct termios tio;
+    tcgetattr(vte_slave_fd, &tio);
     cfmakeraw(&tio);
     tcsetattr(vte_slave_fd, TCSADRAIN, &tio);
 
@@ -476,9 +477,9 @@ gint page_shell_create()
     pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
     vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);
 
-    GdkColor color;
-    gdk_color_parse("red", &color);
-    vte_terminal_set_color_background((VteTerminal*)pg->shell.vte, &color);
+    //GdkColor color;
+    //gdk_color_parse("red", &color);
+    //vte_terminal_set_color_background((VteTerminal*)pg->shell.vte, &color);
     vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");
     vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
