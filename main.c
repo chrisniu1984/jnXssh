@@ -77,6 +77,7 @@ static void *proc_allvte(void *p)
 
     // raw 模式
     struct termios tio;
+    tcgetattr(slave, &tio);
     cfmakeraw(&tio);
     tcsetattr(slave, TCSADRAIN, &tio);
 

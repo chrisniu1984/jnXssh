@@ -22,9 +22,7 @@
 #define SSH     "/usr/bin/ssh"
 #define SHELL   "/bin/bash"
 
-
 static GtkWidget *m_notebook;
-
 static GtkWidget *m_menu;
 static GtkWidget *m_menu_copy;
 static GtkWidget *m_menu_paste;
@@ -425,6 +423,7 @@ int page_init(GtkWidget *hub_page)
     pg->head.image = img_from_stock(GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     gtk_widget_show_all(pg->head.box);
+
     // body
     pg->body = hub_page;
     g_object_set_data(G_OBJECT(pg->body), "pg", pg);
@@ -473,13 +472,9 @@ gint page_shell_create()
     pg->body = vte_terminal_new();
     pg->shell.vte = pg->body;
 
-
     pg->shell.pty = vte_pty_new(VTE_PTY_DEFAULT, NULL); 
     vte_terminal_set_pty_object((VteTerminal*)pg->shell.vte, pg->ssh.pty);
 
-    //GdkColor color;
-    //gdk_color_parse("red", &color);
-    //vte_terminal_set_color_background((VteTerminal*)pg->shell.vte, &color);
     vte_terminal_set_font_from_string((VteTerminal*)pg->shell.vte, "WenQuanYi Micro Hei Mono 11");
     vte_terminal_set_scrollback_lines((VteTerminal*)pg->shell.vte, 1024);
     vte_terminal_set_scroll_on_keystroke((VteTerminal*)pg->shell.vte, 1);
@@ -499,7 +494,7 @@ gint page_shell_create()
     return num;
 }
 
-gint page_create_show(cfg_t *cfg)
+gint page_ssh_create(cfg_t *cfg)
 {
     char *tmp;
 
@@ -524,12 +519,7 @@ gint page_create_show(cfg_t *cfg)
     pg->head.image = img_from_name(ICON_SITE);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.image, FALSE, FALSE, 10);
     char title[256];
-    if (strcmp(cfg->name, cfg->host) == 0) {
-        sprintf(title, "%s", cfg->host);
-    }
-    else {
-        sprintf(title, "%s - %s", cfg->name, cfg->host);
-    }
+    sprintf(title, "%s", cfg->name);
     pg->head.label = gtk_label_new(title);
     gtk_box_pack_start(GTK_BOX(pg->head.box), pg->head.label, FALSE, FALSE, 10);
     pg->head.button = gtk_button_new();
@@ -709,4 +699,9 @@ int page_close(int n)
 int page_close_select()
 {
     return page_close(page_get_select_num());
+}
+
+int page_set_title(int i, char *str)
+{
+    return -1;
 }

@@ -1,8 +1,6 @@
 #ifndef __PAGE_H__
 #define __PAGE_H__
 
-//#include <glib-object.h>
-//#include <glib/gthread.h>
 #include <gtk/gtk.h>
 #include <vte/vte.h>
 
@@ -78,7 +76,7 @@ int page_term();
 
 GtkWidget *page_get_notebook();
 
-gint page_create_show(cfg_t *cfg);
+gint page_ssh_create(cfg_t *cfg);
 gint page_shell_create();
 
 int page_get_count();
@@ -97,6 +95,8 @@ int page_foreach_close();
 
 int page_send_string(int i, char *str);
 int page_send_string_crlf(int i, char *str);
+
+int page_set_title(int i, char *str);
 
 #ifdef __cplusplus
 };

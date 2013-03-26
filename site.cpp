@@ -41,7 +41,7 @@ void on_treeview_row_activated(GtkTreeView *tree_view, GtkTreePath *path, GtkTre
 
     cfg_t *cfg = (cfg_t*) g_value_get_pointer(&value);
     if (cfg) {
-        page_create_show(cfg);
+        page_ssh_create(cfg);
     }
     // 如果为文件夹节点，则展开/收缩此节点
     else {
